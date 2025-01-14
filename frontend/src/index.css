@@ -8,4 +8,9 @@
   padding: 0;
   margin: 0;
   box-sizing: border-box;
+  font-family: serif;
+}
+
+body {
+  background-color: #13293d;
 }
