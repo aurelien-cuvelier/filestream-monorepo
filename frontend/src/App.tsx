@@ -1,54 +1,82 @@
-import { UploadOutlined } from "@ant-design/icons";
-import { Button, Layout, message, Upload, UploadFile, UploadProps } from "antd";
-import { useState } from "react";
+import { Button, Layout, message } from "antd";
+import axios from "axios";
+import { useRef, useState } from "react";
 import "./App.css";
 
 const { Content } = Layout;
 
 function App() {
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const inputFileRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = () => {
-    setUploading(true);
-    // You can use any AJAX library you like
+  const handleSelectFile = () => {
+    if (!inputFileRef.current) {
+      return;
+    }
 
-    message.success("upload successfully.");
-    //message.error("upload failed.");
-    setUploading(false);
+    inputFileRef.current.click();
   };
 
-  const props: UploadProps = {
-    onRemove: (file) => {
-      const index = fileList.indexOf(file);
-      const newFileList = fileList.slice();
-      newFileList.splice(index, 1);
-      setFileList(newFileList);
-    },
-    beforeUpload: (file) => {
-      setFileList([...fileList, file]);
+  const handleOnFileChange = () => {
+    if (!inputFileRef.current) {
+      return;
+    }
 
-      return false;
-    },
-    fileList,
+    const firstFile = inputFileRef.current.files?.item(0);
+
+    if (firstFile) {
+      setFiles([firstFile]);
+    }
+  };
+
+  const handleUpload = async () => {
+    const formatData = new FormData();
+
+    const file = files[0];
+
+    formatData.append(file.name, file);
+
+    try {
+      await axios.post("http://localhost:3000/upload", formatData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      message.success("upload successfully.");
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      message.error("Upload error");
+    }
   };
 
   return (
     <>
       <div className="flex justify-center items-center w-screen h-screen">
         <Content className="flex flex-col justify-center items-center text-white text-3xl">
-          <Upload {...props}>
-            <Button icon={<UploadOutlined />}>Select File</Button>
-          </Upload>
-          <Button
-            type="primary"
-            onClick={handleUpload}
-            disabled={fileList.length === 0}
-            loading={uploading}
-            style={{ marginTop: 16, color: "white" }}
-          >
-            {uploading ? "Uploading" : "Start Upload"}
-          </Button>
+          <input
+            type="file"
+            ref={inputFileRef}
+            style={{ display: "none" }}
+            onChange={handleOnFileChange}
+          />
+          <div className="flex w-[100%] max-w-[250px] justify-between">
+            <Button
+              type="primary"
+              onClick={handleSelectFile}
+              className="text-xl"
+            >
+              Select file
+            </Button>
+            <Button
+              type="primary"
+              disabled={files.length === 0}
+              onClick={handleUpload}
+              className="text-xl"
+            >
+              Upload File
+            </Button>
+          </div>
+          {files.map((file) => file.name)}
         </Content>
       </div>
     </>
